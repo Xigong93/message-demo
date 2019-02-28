@@ -6,24 +6,27 @@ import java.util.*
 class Message(
     var what: Int,
     var obj: Object? = null,
-    var runnable: Runnable? = null,
-    var target: Handler
+    var runnable: Runnable? = null
 
-)
+) {
+    lateinit var target: Handler
 
-open class Handler {
+}
+
+open class Handler(val looper: Looper = Looper.myLooper()!!) {
     open fun handleMessage(message: Message) {
 
     }
 
     fun send(message: Message) {
         message.target = this
+        looper.messageQueue.enqueue(message)
 
     }
 }
 
 class Looper private constructor() {
-    private var messageQueue = MessageQueue()
+    var messageQueue = MessageQueue()
 
     companion object {
         private val looperThreadLocal = ThreadLocal<Looper>()
@@ -35,7 +38,8 @@ class Looper private constructor() {
         }
 
         @JvmStatic
-        fun mainLooper() {
+        fun mainLooper(): Looper {
+            return mainLooper!!
 
         }
 
@@ -67,6 +71,7 @@ class Looper private constructor() {
         fun prepareMainLooper() {
             if (mainLooper == null) {
                 mainLooper = Looper()
+                looperThreadLocal.set(mainLooper)
             } else {
                 throw IllegalStateException("looper exists in main thread")
             }
